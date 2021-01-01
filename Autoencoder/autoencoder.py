@@ -75,6 +75,10 @@ def main():
 	# # split the dataset in order to check the model's behaviour
 	train_X, valid_X, train_ground, valid_ground = train_test_split(dataset, dataset, test_size=0.2, random_state=13)
 		
+	# normalize all values between 0 and 1 
+	train_X = train_X.astype('float32') / 255.
+	valid_X = valid_X.astype('float32') / 255.
+
 	# reshape the train and validation matrices into 28x28x1, due to an idiomorphy of the keras convolution.
 	train_X = np.reshape(train_X, (len(train_X), rows, columns, 1))
 	valid_X = np.reshape(valid_X, (len(valid_X), rows, columns, 1))
@@ -92,7 +96,7 @@ def main():
 		n_conv_filters_per_layer = int(input("Give the number of convolution filters per layer\n"))
 		epochs = int(input("Give the number of epochs\n"))
 		batch_size = int(input("Give the batch size\n"))
-		latent_dim = int(input("Give the latent dimension to be used\n") or "10")
+		latent_dim = int(input("Give the latent dimension to be used\n"))
 
 		print ("---TRYING TO RUN THE AUTOENCODER WITH THE FOLLOWING PARAMETERS: \nconv_layers ", conv_layers, \
 			"   conv_filter_size: ", conv_filter_size, "   n_conv_filters_per_layer: ", n_conv_filters_per_layer, \
