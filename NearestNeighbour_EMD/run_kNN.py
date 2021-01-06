@@ -25,12 +25,12 @@ def main():
 	args = parser.parse_args()
 
 	# parse the dataset and the queryset, in order to create flat vectors
-	features, _, _ = parse_X(args.dataset)
-	queries, _, _ = parse_X(args.queryset)
+	features, _, _ = parse_X(args.dataset, 2000)
+	queries, _, _ = parse_X(args.queryset, 200)
 
 	# parse the labels
-	feature_labels = parse_Y(args.train_labels)
-	query_labels = parse_Y(args.test_labels)
+	feature_labels = parse_Y(args.train_labels, 2000)
+	query_labels = parse_Y(args.test_labels, 200)
 
 	# initialize the BF classes, by passing the feature vectors and the desired metric
 	bf_class_manh = BruteForce(features, manhattan_distance)
@@ -59,8 +59,8 @@ def main():
 			if feature_labels[neighbour[0]] == query_labels[i]:
 				correctly_computed_EMD += 1
 
-	print("Average Correct Search Results EMD: ", correctly_computed_EMD / n_neighs * queries.shape[0])
-	print("Average Correct Search Results MANHATTAN: ", correctly_computed_manh / n_neighs * queries.shape[0])
+	print("Average Correct Search Results EMD: ", (correctly_computed_EMD / n_neighs * 100)/ queries.shape[0], "%")
+	print("Average Correct Search Results MANHATTAN: ", (correctly_computed_manh / n_neighs * 100)/ queries.shape[0], "%")
 
 # Main function of the autoencoder
 if __name__ == "__main__":

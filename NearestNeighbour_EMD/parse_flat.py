@@ -8,7 +8,7 @@ def read_big_endian(byte_sequence):
 	return int.from_bytes(byte_sequence, "big")
 
 # Parse the images of the MNIST dataset
-def parse_X(path):
+def parse_X(path, n_requested):
 	# open the file given as an argument
 	with open(path, "rb") as file:
 		# read the magic number and catch a possible exception
@@ -21,6 +21,8 @@ def parse_X(path):
 		rows = read_big_endian(file.read(4))
 		columns = read_big_endian(file.read(4))
 		
+		if n_requested != n_of_images:
+			n_of_images = n_requested
 		# we are going to store our result in an np array
 		result = []
 
@@ -42,7 +44,7 @@ def parse_X(path):
 	return np.array(result), rows, columns
 
 # parse the labels of the MNIST dataset
-def parse_Y(path):
+def parse_Y(path, n_requested):
 	# open the labels file
 	with open(path, "rb") as file:
 
@@ -53,7 +55,8 @@ def parse_Y(path):
 
 		# read the number of lablels
 		n_of_labels = read_big_endian(file.read(4))
-
+		if n_requested != n_of_labels:
+			n_of_labels = n_requested
 		# we are going to store our result in a 1d np array
 		result = np.zeros((n_of_labels))
 		current_label = 0
