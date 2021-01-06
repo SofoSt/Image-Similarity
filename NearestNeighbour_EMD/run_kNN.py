@@ -1,16 +1,13 @@
 import numpy as np
 from brute_force import *
 from parse_flat import *
+from EMD import *
 import argparse
 
 
 # define the manhatan metric
-def manhattan_distance(a, b):
+def manhattan_distance(a, b, _):
 	return np.abs(a - b).sum()
-
-def EMD(a,b):
-    # TODO
-	return 0
 
 def main():
     	
@@ -33,8 +30,8 @@ def main():
 	query_labels = parse_Y(args.test_labels, 200)
 
 	# initialize the BF classes, by passing the feature vectors and the desired metric
-	bf_class_manh = BruteForce(features, manhattan_distance)
-	bf_class_EMD = BruteForce(features, EMD)
+	bf_class_manh = BruteForce(features, manhattan_distance, 4)
+	bf_class_EMD = BruteForce(features, EMD, 4)
 
 	# we want the 10 nearest neighbours, hardcoded
 	n_neighs = 10
@@ -45,6 +42,9 @@ def main():
 
 	# run all the queries
 	for i, query in enumerate(queries):
+		if (i == 10):
+			break
+		print(i)
     	# list of tuple of the NNs and their distances, using manhattan
 		result = bf_class_manh.kNearestNeighbour(query, n_neighs)
 		# itterate through the neigbours' list, and check how many correct labels were found

@@ -6,9 +6,10 @@ given the query vector.
 """
 class BruteForce():
 	# Initialization of the class
-	def __init__(self, feature_vectors, metric):
+	def __init__(self, feature_vectors, metric, n_clusters):
 		self.feature_vectors = feature_vectors
 		self.metric = metric
+		self.n_clusters = n_clusters
 
 	def kNearestNeighbour(self, query, k):
 		# list for the neighbours to be stored
@@ -16,7 +17,7 @@ class BruteForce():
 		kth_min_distance = sys.maxsize
 
 		for i, feature in enumerate(self.feature_vectors):
-			distance = self.metric(feature, query)
+			distance = self.metric(feature, query, self.n_clusters)
 
 			if len(result) > 0 and len(result) < k:
 				
