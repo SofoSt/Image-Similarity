@@ -10,80 +10,84 @@ def create_clusters(array, nrows, ncols):
 				 .swapaxes(1, 2)
 				 .reshape(-1, nrows, ncols))
 
-def EMD(image_a, image_b, n_clusters):
-	# find out the dimenstion of the image
-	dim = int(math.sqrt(len(image_a)))
-	# in order to reshape them
-	image_a = image_a.reshape(dim,-1)
-	image_b = image_b.reshape(dim,-1)
-	# find the dimension of the clusters
-	cluster_dim = dim // n_clusters
-	# split the images in order to create the clusters
-	clusters_a = create_clusters(image_a, cluster_dim, cluster_dim)
-	clusters_b = create_clusters(image_b, cluster_dim, cluster_dim)
 
-	# we need the array of the distances between the representatives
-	d = np.zeros((n_clusters, n_clusters))
-	# and 2 arrays to hold the sum of the images
-	w_a = np.zeros(n_clusters ** 2)
-	w_b = np.zeros(n_clusters ** 2)
-	
-	# compute the distanced
-	for i in range(n_clusters):
-		for j in range(n_clusters):
-			d[i][j] = np.linalg.norm(clusters_a[i][cluster_dim - 1][cluster_dim - 1] - clusters_b[j][cluster_dim - 1][cluster_dim - 1])
-	
-	# compute the sums
-	for i in range(n_clusters ** 2):
-		w_a[i] = np.sum(clusters_a[i])
-		w_b[i] = np.sum(clusters_b[i])
-	
-	# normalize the w values
-	w_a = w_a / np.sum(w_a)
-	w_b = w_b / np.sum(w_b)
-	
-	# set the variables for the LP problem
-	F = []
-	for i in range(n_clusters):
-		temp_f = []
-		for j in range(n_clusters):
-			temp_f.append(LpVariable("f" + str(i) + "_" + str(j), lowBound = 0))
-		F.append(temp_f)
+class EMD():
+	def __init__(self, n_clusters):
+		# compute the distanced
+		self.d = np.zeros((n_clusters, n_clusters))
 
-	# define the LP Problem
-	emd_problem = LpProblem("EMD", LpMinimize)
+		for i in range(n_clusters):
+			for j in range(n_clusters):
+				row_i = i / (math.sqrt(n_clusters))
+				row_j = j / (math.sqrt(n_clusters))
+				col_i = i % (math.sqrt(n_clusters))
+				col_j = j % (math.sqrt(n_clusters))
+				self.d[i][j] = math.sqrt((row_i - row_j) ** 2 + (col_i - col_j) ** 2)
 
-	# define the objective function
-	constraints = []
-	obj_fn = []
-	for i in range(n_clusters):
-		for j in range(n_clusters):
-			obj_fn.append(F[i][j] * d[i][j])
-
-			constraints.append(F[i][j])
+	def compute_EMD(self, image_a, image_b, n_clusters):	
+		# find out the dimenstion of the image
+		dim = int(math.sqrt(len(image_a)))
+		# in order to reshape them
+		image_a = image_a.reshape(dim,-1)
+		image_b = image_b.reshape(dim,-1)
+		# find the dimension of the clusters
+		cluster_dim = int(dim // math.sqrt(n_clusters))
+		# split the images in order to create the clusters
+		clusters_a = create_clusters(image_a, cluster_dim, cluster_dim)
+		clusters_b = create_clusters(image_b, cluster_dim, cluster_dim)
+		# we need the array of the distances between the representatives
+		d = np.zeros((n_clusters, n_clusters))
+		# and 2 arrays to hold the sum of the images
+		w_a = np.zeros(n_clusters)
+		w_b = np.zeros(n_clusters)
 		
-	# we want to minimize the sum
-	emd_problem += lpSum(obj_fn)
+		# compute the sums
+		for i in range(n_clusters):
+			w_a[i] = np.sum(clusters_a[i])
+			w_b[i] = np.sum(clusters_b[i])
+		
+		# normalize the w values
+		w_a = w_a / np.sum(w_a)
+		w_b = w_b / np.sum(w_b)
 
-	# insert the 3rd constraint 
-	emd_problem += lpSum(constraints) == np.sum(w_a)
+		# set the variables for the LP problem
+		F = []
+		for i in range(n_clusters):
+			temp_f = []
+			for j in range(n_clusters):
+				temp_f.append(LpVariable("f" + str(i) + "_" + str(j), lowBound = 0))
+			F.append(temp_f)
 
-	# 2nd and 3rd constraints
-	for i in range(n_clusters):
-		const_a = [F[i][j] for j in range(n_clusters)]
-		emd_problem += lpSum(const_a) <= w_a[i]
+		# define the LP Problem
+		emd_problem = LpProblem("EMD", LpMinimize)
 
-	for j in range(n_clusters):
-		const_b = [F[i][j] for i in range(n_clusters)]
-		emd_problem += lpSum(const_b) <= w_b[j]
+		# define the objective function
+		constraints = []
+		obj_fn = []
+		for i in range(n_clusters):
+			for j in range(n_clusters):
+				obj_fn.append(F[i][j] * self.d[i][j])
 
-	# solve the problem
-	emd_problem.writeLP("../misc/EMD.lp")
-	emd_problem.solve(PULP_CBC_CMD(msg=False))
+				constraints.append(F[i][j])
+			
+		# we want to minimize the sum
+		emd_problem += lpSum(obj_fn)
 
-	# return the minimum flow, but normalized
-	res = value(emd_problem.objective)
-	#TODO: Maybe change
-	if res == None:
-		return sys.maxsize
-	return res / np.sum(w_a)
+		# 2nd and 3rd constraints
+		for i in range(n_clusters):
+			const_a = [F[i][j] for j in range(n_clusters)]
+			emd_problem += lpSum(const_a) == w_a[i]
+
+		for j in range(n_clusters):
+			const_b = [F[i][j] for i in range(n_clusters)]
+			emd_problem += lpSum(const_b) == w_b[j]
+
+		# insert the 4rd constraint 
+		# emd_problem += lpSum(constraints) == np.sum(w_a)
+		
+		# solve the problem
+		emd_problem.writeLP("../misc/EMD.lp")
+		emd_problem.solve(GLPK_CMD(msg=False))
+
+		# return the minimum flow, but normalized
+		return value(emd_problem.objective)

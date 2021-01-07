@@ -22,16 +22,22 @@ def main():
 	args = parser.parse_args()
 
 	# parse the dataset and the queryset, in order to create flat vectors
-	features, _, _ = parse_X(args.dataset, 2000)
-	queries, _, _ = parse_X(args.queryset, 200)
+	features, _, _ = parse_X(args.dataset, 1000)
+	queries, _, _ = parse_X(args.queryset, 10)
 
 	# parse the labels
-	feature_labels = parse_Y(args.train_labels, 2000)
-	query_labels = parse_Y(args.test_labels, 200)
+	feature_labels = parse_Y(args.train_labels, 1000)
+	query_labels = parse_Y(args.test_labels, 10)
 
+
+	# initialize the EMD class
+	emd = EMD(16)
+
+	# print(EMD(features[1], features[2], 4))
+	# return
 	# initialize the BF classes, by passing the feature vectors and the desired metric
-	bf_class_manh = BruteForce(features, manhattan_distance, 4)
-	bf_class_EMD = BruteForce(features, EMD, 4)
+	bf_class_manh = BruteForce(features, manhattan_distance, _)
+	bf_class_EMD = BruteForce(features, emd.compute_EMD, 16)
 
 	# we want the 10 nearest neighbours, hardcoded
 	n_neighs = 10
@@ -42,8 +48,6 @@ def main():
 
 	# run all the queries
 	for i, query in enumerate(queries):
-		if (i == 10):
-			break
 		print(i)
     	# list of tuple of the NNs and their distances, using manhattan
 		result = bf_class_manh.kNearestNeighbour(query, n_neighs)
@@ -54,10 +58,12 @@ def main():
 
 		# list of tuple of the NNs and their distances, using EMD
 		result = bf_class_EMD.kNearestNeighbour(query, n_neighs)
+		print(result)
 		# itterate through the neigbours' list, and check how many correct labels were found
 		for neighbour in result:
 			if feature_labels[neighbour[0]] == query_labels[i]:
 				correctly_computed_EMD += 1
+			print(feature_labels[neighbour[0]], query_labels[i])
 
 	print("Average Correct Search Results EMD: ", (correctly_computed_EMD / n_neighs * 100)/ queries.shape[0], "%")
 	print("Average Correct Search Results MANHATTAN: ", (correctly_computed_manh / n_neighs * 100)/ queries.shape[0], "%")
