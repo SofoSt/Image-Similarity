@@ -37,13 +37,11 @@ def decoder(encoder_result):
     for i in range (0, decoding_layers - 1):
         name1 = 'dec' + str(i) + 'a'
         name2 = 'dec' + str(i) + 'b'
-        print(name1)
         # apply convolution and batch normalization 2 times
         conv_layer = Conv2DTranspose(current_filters_per_layer, (conv_filter_size, conv_filter_size), activation='relu', padding='same', name=name1)(prev_conv_layer)
         conv_layer = BatchNormalization()(conv_layer)
         conv_layer = Conv2DTranspose(current_filters_per_layer, (conv_filter_size, conv_filter_size), activation='relu', padding='same', name=name2)(conv_layer)
         conv_layer = BatchNormalization()(conv_layer)
-        print(i, current_filters_per_layer)
         
         # again, devide the filters per layer by 2
         current_filters_per_layer /= 2

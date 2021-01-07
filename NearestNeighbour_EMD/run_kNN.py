@@ -33,7 +33,7 @@ def main():
 	# initialize the EMD class
 	emd = EMD(16)
 
-	# print(EMD(features[1], features[2], 4))
+	# print(emd.compute_EMD(features[1], features[2], 16))
 	# return
 	# initialize the BF classes, by passing the feature vectors and the desired metric
 	bf_class_manh = BruteForce(features, manhattan_distance, _)

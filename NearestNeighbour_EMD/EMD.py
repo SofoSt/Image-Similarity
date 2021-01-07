@@ -87,7 +87,7 @@ class EMD():
 		
 		# solve the problem
 		emd_problem.writeLP("../misc/EMD.lp")
-		emd_problem.solve(GLPK_CMD(msg=False))
+		emd_problem.solve(PULP_CBC_CMD(msg=False))
 
 		# return the minimum flow, but normalized
 		return value(emd_problem.objective)
