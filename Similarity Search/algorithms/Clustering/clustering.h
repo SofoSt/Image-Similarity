@@ -7,6 +7,9 @@
 #include <vector>
 #include <ctime>
 #include <utility>
+#include <fstream>
+#include <string>
+#include <sstream>
 
 #include "../Search/LSH/headers/lsh.h"
 #include "../Search/Hypercube/headers/hypercube.h"
@@ -19,7 +22,9 @@ class Clustering {
 		int k; // number of clusters needed
 		int n_points; //number of points in the dataset
 		uint32_t space_dim; // space dimension
+		uint32_t original_space_dim; // space dimension
 
+		bool using_reduced_space = false;
 		/** assignment method chosen by the user. Options are:
 		  		- lloyds
 				- reverse_LSH
@@ -30,9 +35,14 @@ class Clustering {
 		
 		// vectors of the centroids
 		std::vector<std::vector<T>> centroids;
-
+		// vectors of the centroids
+		std::vector<std::vector<T>> original_centroids;
+		
 		// vector of the vectors given to us, stored here for convinience
 		std::vector<std::vector<T>> feature_vectors;
+		// vector of the vectors given to us, stored here for convinience
+		std::vector<std::vector<T>> original_feature_vectors;
+
 
 		// vector that hols the index of the centroid that the current index's vector is assigned to
 		std::vector<int> assigned_centroid;
@@ -117,8 +127,49 @@ class Clustering {
 			return min_dist;
 		}
 
+		// parse the python input file
+		void parser(string file_name, int k) {
+			// we need a big line, in order to read all of our data
+			string line[k];
+			for (int i = 0; i < k; i++)
+				line[i].resize(100000);
+			// keep track of the clusters
+			int cluster_counter = 0;
+
+			// open the file
+			ifstream input_file(file_name);
+			if (input_file.is_open()) {
+				// read each line(every line is one cluster)
+				while (getline(input_file, line[cluster_counter])) {
+					// take the first substring, which is then being ignored
+					stringstream ss(line[cluster_counter]);
+					string str;
+					getline(ss, str, ',');
+
+					// read each vector id
+					while (ss.good()) {
+						string sub_str;
+						// vectors are seperated by commas
+						getline(ss, sub_str, ',');
+						// until we reach the end of the string
+						if ( sub_str.find(" }") == string::npos) {
+							int current = stoi(sub_str);
+							// update the assigned centroids map
+							assigned_centroid[current] = cluster_counter;
+						} 
+						
+					}
+					// break if we've read all the clusters
+					if (++cluster_counter  == k)
+						break;
+				}
+			}
+			// close the file
+			input_file.close();
+		}	
+
 	public:
-		// constructor when lloyds assignment is requested
+		// constructor when original space is requested
 		Clustering(std::string assignment_method, std::vector<std::vector<T>> feature_vectors, uint32_t k)
 		: feature_vectors(feature_vectors), k(k) {
 			if (assignment_method != "lloyds") {
@@ -130,64 +181,52 @@ class Clustering {
 			n_points = feature_vectors.size();
 			assert(n_points);
 			space_dim = feature_vectors.at(0).size();
-			cout << space_dim << endl;
 
 			vector<int> assigned(n_points, 0);
 			assigned_centroid = assigned;
 
 		};
+		// constructor when reduced space is requested
+		Clustering(std::string assignment_method, std::vector<std::vector<T>> feature_vectors, std::vector<std::vector<T>> org_feature_vectors, uint32_t k)
+		: feature_vectors(feature_vectors), original_feature_vectors(org_feature_vectors), k(k) {
+			if (assignment_method != "lloyds") {
+				cout << "Wrong assignment method selected\n";
+				exit(EXIT_FAILURE);
+			}
+			// initialize all the classs fields necessary
+			this->assignment_method = assignment_method;
+			n_points = feature_vectors.size();
+			assert(n_points);
+			space_dim = feature_vectors.at(0).size();
+			original_space_dim = original_feature_vectors.at(0).size();
 
-		// constructor when reverse assignment using lsh is requested
-		Clustering(std::string assignment_method, std::vector<std::vector<T>> feature_vectors,
-			uint32_t k, uint32_t lsh_l, uint32_t lsh_k): feature_vectors(feature_vectors), k(k), lsh_l(lsh_l), lsh_k(lsh_k) {
-				if (assignment_method != "reverse_LSH") {
-					cout << "Wrong assignment method selected\n";
-					exit(EXIT_FAILURE);
-				}	
-				// initialize all the classs fields necessary
-				this->assignment_method = assignment_method;
+			vector<int> assigned(n_points, 0);
+			assigned_centroid = assigned;
 
-				// default lsh arguments
-				uint32_t m = pow(2,32) - 5;
-				uint32_t M = n_points / 16;
-				uint32_t w = 10000;
-				
+			using_reduced_space = true;
+
+		};
+
+		// constructor when reading the clusters from a file
+		Clustering(std::vector<std::vector<T>> feature_vectors, string file_name, int k):
+			feature_vectors(feature_vectors), k(k) {
+
 				n_points = feature_vectors.size();
 				assert(n_points);
-				space_dim = feature_vectors.at(0).size();
-
-				// initialize the lsh class
-				lsh_instant = new LSH<T>(lsh_l, m, M, n_points, lsh_k, space_dim, w, feature_vectors);
 
 				vector<int> assigned(n_points, 0);
 				assigned_centroid = assigned;
-		};
-
-		// constructor when reverse assignment using hypercube is requested
-		Clustering(std::string assignment_method, std::vector<std::vector<T>> feature_vectors, uint32_t k,
-			uint32_t hc_M, uint32_t hc_k, uint32_t hc_probes): feature_vectors(feature_vectors), k(k),
-			hc_M(hc_M), hc_k(hc_k), hc_probes(hc_probes) {
-				if (assignment_method != "reverse_Hypercube") {
-					cout << "Wrong assignment method selected\n";
-					exit(EXIT_FAILURE);
-				}	
-				// initialize all the classs fields necessary
-				this->assignment_method = assignment_method;
-
-				// default hypercube arguments
-				uint32_t m = pow(2,32) - 5;
-				uint32_t w = 10000;
-
-				
-				n_points = feature_vectors.size();
-				assert(n_points);
 				space_dim = feature_vectors.at(0).size();
-
-				hc_instant = new Hypercube<T>(hc_k, m, hc_M, hc_probes, n_points, w, space_dim, feature_vectors);
-
-				vector<int> assigned(n_points, 0);
-				assigned_centroid = assigned;
-		};
+				// parse the file in order to obtain the assigned centroid for each vector
+				parser(file_name, k);
+				// create the centroids from the info that we already have
+				for (int i = 0; i < k; i++) {
+					vector<T> temp_centroid(space_dim, 0);
+					centroids.push_back(temp_centroid);
+				}
+				// update the centroids to get the median
+				update();
+			}
 
 		// destructor for the clustering class
 		~Clustering(){
@@ -293,6 +332,29 @@ class Clustering {
 						current_component.push_back(centroids_map.at(i).at(n).at(j));
 					}
 					centroids.at(i).at(j) = our_math::median(current_component);
+				}
+			}
+		};
+
+		// update the centroids with the kmedian method
+		void update_original(void) {
+			// we want to keep a map containing the true values of the vectors, in order to find the median
+			std::vector<std::vector<std::vector<T>>> centroids_map(k);
+			// insert the vectors in the map
+			for (int i = 0; i < n_points; i++) {
+				int assigned = assigned_centroid.at(i);
+				centroids_map.at(assigned).push_back(original_feature_vectors.at(i));
+			}
+			// for each centroid 
+			for (int i = 0; i < k; i++) {
+				// for each one of its dimenions
+				for (int j = 0; j < (int)original_space_dim; j++) {
+					vector<T> current_component;
+					// parse through all of its assigned vectors in order to find the median
+					for (int n = 0; n < (int)centroids_map.at(i).size(); n++) {
+						current_component.push_back(centroids_map.at(i).at(n).at(j));
+					}
+					original_centroids.at(i).at(j) = our_math::median(current_component);
 				}
 			}
 		};
@@ -458,5 +520,30 @@ class Clustering {
 				// Step 3: Update the centroids
 				update();
 			}
+			// if we are using the reduced vectors, we want to make the rest of the computations in the original dimension
+			if (using_reduced_space) {
+				// create the centroids from the info that we already have
+				for (int i = 0; i < k; i++) {
+					vector<T> temp_centroid(original_space_dim, 0);
+					original_centroids.push_back(temp_centroid);
+				}
+				// update the centroids to get the median
+				update_original();
+				// no need for the reduced no more!
+				centroids = original_centroids;
+				feature_vectors = original_feature_vectors;
+				space_dim = original_space_dim;
+			}
 		}
+
+		// compute the objective function for evaluating the clusters
+		double compute_objective_function() {
+			double obj_sum = 0;
+			// sum of the distanced of each image from their centroid
+			for (int i = 0; i < n_points; i++) {
+				obj_sum += metrics::ManhatanDistance(feature_vectors[i], feature_vectors[assigned_centroid[i]], space_dim);
+			}
+			return obj_sum;
+		}
+
 };

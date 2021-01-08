@@ -33,8 +33,6 @@ def main():
 	# initialize the EMD class
 	emd = EMD(16)
 
-	# print(emd.compute_EMD(features[1], features[2], 16))
-	# return
 	# initialize the BF classes, by passing the feature vectors and the desired metric
 	bf_class_manh = BruteForce(features, manhattan_distance, _)
 	bf_class_EMD = BruteForce(features, emd.compute_EMD, 16)
@@ -48,7 +46,7 @@ def main():
 
 	# run all the queries
 	for i, query in enumerate(queries):
-		print(i)
+		print("Running Query ", i)
     	# list of tuple of the NNs and their distances, using manhattan
 		result = bf_class_manh.kNearestNeighbour(query, n_neighs)
 		# itterate through the neigbours' list, and check how many correct labels were found

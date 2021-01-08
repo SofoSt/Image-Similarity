@@ -39,10 +39,17 @@ int main(int argc, char* argv[]) {
 
 	Clustering<double>* instant;
 	Clustering<double>* instant_reduced;
+	Clustering<double>* instant_nn;
+
 	// construct the cluster class depending on which algorithm the user has chosen
-	instant_reduced = new Clustering<double>("lloyds", feature_vectors_reduced, k);
+	instant_reduced = new Clustering<double>("lloyds", feature_vectors_reduced, feature_vectors, k);
 	instant = new Clustering<double>("lloyds", feature_vectors, k);
+
 	
+	cout << "Creating Clusters from the NN file" << endl;
+	// create the clusters from the NN file. The constructor creates ecerything, no need for running the algorithm
+	instant_nn = new Clustering<double>(feature_vectors, clusters_from_NN, k);
+
 	cout << "Running clustering algorithm for the original space" << endl;
 	auto c_start = std::chrono::high_resolution_clock::now();
 	// run the clustering algorithm
@@ -70,6 +77,12 @@ int main(int argc, char* argv[]) {
 	// get the actual centroids
 	vector<vector<double>> reduced_centroids = instant_reduced->get_centroids();
 
+	cout << "Computing silhouettes for each architecture" << endl;
+	// compute the silhouette for the reduced space
+	auto red_pair = instant_reduced->compute_silhouette();
+	auto pair_nn = instant_nn->compute_silhouette();
+	auto pair = instant->compute_silhouette();
+
 	// reduced vectors' stats
 	// print stats for each cluster
 	output << "NEW SPACE" << endl;
@@ -78,18 +91,17 @@ int main(int argc, char* argv[]) {
 		print::vector_print_infile(reduced_centroids.at(i), &output);
 		output << "}\n";
 	}
-
 	// print the clustering time
 	output << "clustering_time: " <<  cluster_red_time.count() << endl;
-	
-	// // compute the silhouette
-	// auto pair = instant_reduced->compute_silhouette();
-	// // print the silhouette results
-	// output << "\nSilhouette: [";
-	// print::vector_print_infile(pair.first, &output);
-	// output << ", " << pair.second << "]\n\n";
+
+	// print the silhouette results
+	output << "\nSilhouette: [";
+	print::vector_print_infile(red_pair.first, &output);
+	output << ", " << red_pair.second << "]\n\n";
+	output << "Value of Objective Function: " << instant_reduced->compute_objective_function() << endl << endl;
 
 
+	output << "ORIGINAL SPACE" << endl;
 	// print stats for each cluster
 	for (int i = 0; i < k; i++) {
 		output << "CLUSTER-" << i << " {size: " << centroids_map.at(i).size() << ", centroid: ";
@@ -99,21 +111,31 @@ int main(int argc, char* argv[]) {
 
 	// print the clustering time
 	output << "clustering_time: " <<  cluster_time.count() << endl;
-	
-	// // compute the silhouette
-	// auto pair = instant->compute_silhouette();
-	// // print the silhouette results
-	// output << "\nSilhouette: [";
-	// print::vector_print_infile(pair.first, &output);
-	// output << ", " << pair.second << "]\n\n";
+	// print the silhouette results
+	output << "\nSilhouette: [";
+	print::vector_print_infile(pair.first, &output);
+	output << ", " << pair.second << "]\n\n";
+	output << "Value of Objective Function: " << instant->compute_objective_function() << endl << endl;
 
-	// free the class pointer to wrap it up
-	
+
+	output << "CLASSES AS CLUSTERS" << endl;
+	// print the silhouette results
+	output << "\nSilhouette: [";
+	print::vector_print_infile(pair_nn.first, &output);
+	output << ", " << pair_nn.second << "]\n\n";
+	output << "Value of Objective Function: " << instant_nn->compute_objective_function() << endl << endl;
+
+
+	// free the class pointer to wrap it up	
 	delete instant;
+	delete instant_nn;
+	delete instant_reduced;
 
 	output.close();
 
 	free(input_file);
+	free(input_file_reduced);
 	free(config_file);
 	free(output_file);
+	free(clusters_from_NN);
 }

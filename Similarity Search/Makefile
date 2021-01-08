@@ -43,7 +43,7 @@ clean_cluster:
 # Default Arguments for path I am in
 LSH_ARGS  = -d ../misc/original_space/train_set/train-images-idx3-ubyte -q ../misc/original_space/test_set/t10k-images-idx3-ubyte -i ../misc/reduced_space/train_reduced_60k -s ../misc/reduced_space/test_reduced_10k -k 4 -L 4 -o executables/lsh/lsh_out -N 1
 CUBE_ARGS = -d misc/datasets/train-images-idx3-ubyte  -q misc/querysets/t10k-images-idx3-ubyte -k 14 -M 3000 -probes 100 -o executables/hypercube/cube_out -N 1 -R 10000
-CLUSTER_LLOYDS_ARGS = -d ../misc/original_space/train_set/train-images-idx3-ubyte -c config/cluster.conf -o executables/clustering/cluster_lloyds_out -i ../misc/reduced_space/train_reduced_60k -n ../misc/classes_for_clustering
+CLUSTER_LLOYDS_ARGS = -d ../misc/original_space/train_set/t5k-images-idx3-ubyte -c config/cluster.conf -o executables/clustering/cluster_lloyds_out -i ../misc/reduced_space/train_reduced_5k -n ../misc/classes_for_clustering_small
 
 # Running
 run_lsh: lsh
