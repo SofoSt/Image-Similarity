@@ -56,12 +56,10 @@ def main():
 
 		# list of tuple of the NNs and their distances, using EMD
 		result = bf_class_EMD.kNearestNeighbour(query, n_neighs)
-		print(result)
 		# itterate through the neigbours' list, and check how many correct labels were found
 		for neighbour in result:
 			if feature_labels[neighbour[0]] == query_labels[i]:
 				correctly_computed_EMD += 1
-			print(feature_labels[neighbour[0]], query_labels[i])
 
 	print("Average Correct Search Results EMD: ", (correctly_computed_EMD / n_neighs * 100)/ queries.shape[0], "%")
 	print("Average Correct Search Results MANHATTAN: ", (correctly_computed_manh / n_neighs * 100)/ queries.shape[0], "%")
