@@ -31,11 +31,12 @@ def main():
 
 
 	# initialize the EMD class
-	emd = EMD(16)
+	number_of_clusters = 16
+	emd = EMD(number_of_clusters)
 
 	# initialize the BF classes, by passing the feature vectors and the desired metric
 	bf_class_manh = BruteForce(features, manhattan_distance, _)
-	bf_class_EMD = BruteForce(features, emd.compute_EMD, 16)
+	bf_class_EMD = BruteForce(features, emd.compute_EMD, number_of_clusters)
 
 	# we want the 10 nearest neighbours, hardcoded
 	n_neighs = 10
