@@ -79,4 +79,4 @@ This project is licensed under the MIT License - see the [LICENSE](/LICENCE) fil
 ## Contributors
 
 [Nikos Galanis](https://github.com/nikosgalanis) \
-[Sofoklis Strompolas](https://github.com/SofoSt/)
+[SofoSt](https://github.com/SofoSt/)
