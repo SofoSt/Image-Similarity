@@ -71,7 +71,7 @@ make run cluster lloyds big
 **Note:** The files (reduced, regular, NN) should be of the same size, otherwise the program is going to fail.
 
 ## More Implementation details and Results
-They can be found in the Proejct [README](/README.pdf)
+They can be found in the Project [README](/README.pdf)
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](/LICENCE) file for details
